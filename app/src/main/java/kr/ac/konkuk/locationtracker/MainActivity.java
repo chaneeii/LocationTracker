@@ -1,23 +1,25 @@
 package kr.ac.konkuk.locationtracker;
 
-        import androidx.annotation.NonNull;
-        import androidx.appcompat.app.AppCompatActivity;
-        import androidx.core.app.ActivityCompat;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
-        import android.Manifest;
-        import android.content.pm.PackageManager;
-        import android.location.Location;
-        import android.os.Build;
-        import android.os.Bundle;
-        import android.view.View;
-        import android.widget.Switch;
-        import android.widget.TextView;
-        import android.widget.Toast;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.os.Build;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Switch;
+import android.widget.TextView;
+import android.widget.Toast;
 
-        import com.google.android.gms.location.FusedLocationProviderClient;
-        import com.google.android.gms.location.LocationRequest;
-        import com.google.android.gms.location.LocationServices;
-        import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -36,8 +38,12 @@ public class MainActivity extends AppCompatActivity {
     //Location Request is a config file for all setting realted ro FusedLocationProviderClient
     LocationRequest locationRequest;
 
+    //location callback
+    LocationCallback locationCallBack;
+
     // Google's API for location services. the majority of the app functions using this class
     FusedLocationProviderClient fusedLocationProviderClient;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,35 +67,66 @@ public class MainActivity extends AppCompatActivity {
 
 
         /*
-        * set all propertiees of LocationRequest
-        */
+         * set all propertiees of LocationRequest
+         */
 
         locationRequest = new LocationRequest();
 
         // 디폴트 위치기록 주기 30secs
         locationRequest.setInterval(1000 * DEFAULT_UPDATE_INTERVAL);
-
         // 더 빠른 주기록 기록시 5secs
-        locationRequest.setInterval(1000 * FAST_UPDATE_INTERVAL);
-
+        locationRequest.setFastestInterval(1000 * FAST_UPDATE_INTERVAL);
         //high accuracy lowpower
         locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 
+        /*
+         * LOCATION CALLBACK
+         * Event that is triggered whenever the update interval is met
+         */
+        locationCallBack = new LocationCallback() {
+
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                super.onLocationResult(locationResult);
 
 
+                //save the location
+//                Location location = locationResult.getLastLocation();
+                updateUIValues(locationResult.getLastLocation());
+
+            }
+        };
+
+
+        //gps accuracy
         sw_gps.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (sw_gps.isChecked()){
+                if (sw_gps.isChecked()) {
                     //true
                     //most accurate - use GPS
                     locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
                     tv_sensor.setText("Using GPS Sensors");
-                }
-                else{
+                } else {
                     //most accurate - use GPS
                     locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
                     tv_sensor.setText("Using Towers + WIFI");
+                }
+            }
+        });
+
+
+        // location updates!
+        sw_locationsupdates.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (sw_locationsupdates.isChecked()) {
+                    //turn on location updates
+                    startLocationUpdates();
+
+                } else {
+                    //turn off location updates
+                    stopLocationUpdates();
                 }
             }
         });
@@ -99,6 +136,29 @@ public class MainActivity extends AppCompatActivity {
 
 
     } // end of onCreate method
+
+    private void startLocationUpdates() {
+        tv_updates.setText("Location is being tracked");
+
+        //권한체크
+        fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallBack, null);
+        updateGPS();
+
+    }
+
+    private void stopLocationUpdates() {
+        tv_updates.setText("Location is Not being tracked");
+        tv_lat.setText("Not tracking location");
+        tv_lon.setText("Not tracking location");
+        tv_speed.setText("Not tracking location");
+        tv_address.setText("Not tracking location");
+        tv_accuracy.setText("Not tracking location");
+        tv_altitude.setText("Not tracking location");
+        tv_sensor.setText("Not tracking location");
+
+        fusedLocationProviderClient.removeLocationUpdates(locationCallBack);
+
+    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
