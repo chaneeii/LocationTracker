@@ -13,6 +13,7 @@ import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,11 +37,19 @@ public class MainActivity extends AppCompatActivity {
     private static final int PERMISSIONS_FINE_LOCATION = 99;
 
     //ui
-    TextView tv_lat, tv_lon, tv_altitude, tv_accuracy, tv_speed, tv_sensor, tv_updates, tv_address;
+    TextView tv_lat, tv_lon, tv_altitude, tv_accuracy, tv_speed, tv_sensor, tv_updates, tv_address, tv_wayPointCounts;
+    Button btn_newWayPoint, btn_showWayPointList;
     Switch sw_locationsupdates, sw_gps;
 
     // variable for remember if we are tracking location or not
     boolean updateOn = false;
+
+    //current location
+    Location currentLocation;
+
+    //List of saved locations
+    List<Location> savedLocations;
+
 
     //Location Request is a config file for all setting realted ro FusedLocationProviderClient
     LocationRequest locationRequest;
@@ -70,6 +79,10 @@ public class MainActivity extends AppCompatActivity {
         tv_address = findViewById(R.id.tv_address);
         sw_locationsupdates = findViewById(R.id.sw_locationsupdates);
         sw_gps = findViewById(R.id.sw_gps);
+        btn_newWayPoint = findViewById(R.id.btn_newWayPoint);
+        btn_showWayPointList = findViewById(R.id.btn_showWayPointList);
+        tv_wayPointCounts = findViewById(R.id.tv_countOfCrumbs);
+
 
 
 
@@ -103,6 +116,22 @@ public class MainActivity extends AppCompatActivity {
 
             }
         };
+
+
+        // NEW WAYPOINT
+        btn_newWayPoint.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //get the gps location
+
+                //add the new location to global list
+                MyApplication myApplication = (MyApplication)getApplicationContext();
+                savedLocations = myApplication.getMyLocations(); //savedLocation 은 이제 글로벌 리스트이다.
+                savedLocations.add(currentLocation);
+
+            }
+        });
+
 
 
         //gps accuracy
@@ -209,6 +238,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onSuccess(Location location) {
                     //we got permissions. Put the values of  경도 위도 속도 드등을 가져다가 UI components 에 넣을것이다.
                     updateUIValues(location);
+                    currentLocation = location;
 
                 }
             });
@@ -246,6 +276,8 @@ public class MainActivity extends AppCompatActivity {
             tv_speed.setText("Not Available");
         }
 
+
+        //reverse - geocoding
         Geocoder geocoder = new Geocoder(MainActivity.this);
 
         try{
@@ -255,6 +287,15 @@ public class MainActivity extends AppCompatActivity {
         catch (Exception e){
             tv_address.setText("Unable to get street address");
         }
+
+
+        // Crumbs / savedLocations
+        MyApplication myApplication = (MyApplication)getApplicationContext();
+        savedLocations = myApplication.getMyLocations();
+
+        //show the number of waypoints saved.
+        tv_wayPointCounts.setText(Integer.toString(savedLocations.size()));   //몇개 있는지
+
 
 
 
