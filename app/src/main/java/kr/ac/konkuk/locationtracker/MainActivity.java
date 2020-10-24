@@ -5,7 +5,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
@@ -20,6 +23,10 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnSuccessListener;
+
+import java.util.List;
+
+import static java.lang.String.valueOf;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -137,22 +144,23 @@ public class MainActivity extends AppCompatActivity {
 
     } // end of onCreate method
 
+    @SuppressLint("MissingPermission")
     private void startLocationUpdates() {
         tv_updates.setText("Location is being tracked");
-//        fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallBack, null);
-//        updateGPS();
+        fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallBack, null);
+        updateGPS();
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallBack, null);
-            updateGPS();
-        }
-        else {
-            // permissions not granted yet
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){ //최소 요구버전 M이상 이여야한다.
-                requestPermissions(new String [] {Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_FINE_LOCATION);
-            }
-        }
+//        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+//                != PackageManager.PERMISSION_GRANTED) {
+//            fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallBack, null);
+//            updateGPS();
+//        }
+//        else {
+//            // permissions not granted yet
+//            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){ //최소 요구버전 M이상 이여야한다.
+//                requestPermissions(new String [] {Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_FINE_LOCATION);
+//            }
+//        }
 
 
 
@@ -218,23 +226,34 @@ public class MainActivity extends AppCompatActivity {
     private void updateUIValues(Location location) {
 
         //update all of the test view object with new location
-        tv_lat.setText(String.valueOf(location.getLatitude())); //latitude는 double이라 파싱해서 스트링으로 전환
-        tv_lon.setText(String.valueOf(location.getLongitude()));
-        tv_accuracy.setText(String.valueOf(location.getAccuracy()));
+        tv_lat.setText(valueOf(location.getLatitude())); //latitude는 double이라 파싱해서 스트링으로 전환
+        tv_lon.setText(valueOf(location.getLongitude()));
+        tv_accuracy.setText(valueOf(location.getAccuracy()));
         //나중에 여기에 시간 가져오기!
 
+
         if(location.hasAltitude()){ //모든 폰이 고도 측정은 안해서 고도도 가져옴
-            tv_altitude.setText(String.valueOf(location.getAltitude()));
+            tv_altitude.setText(valueOf(location.getAltitude()));
         }
         else {
             tv_altitude.setText("Not Available");
         }
 
         if(location.hasSpeed()){ //모든 폰이 고도 측정은 안해서 고도도 가져옴
-            tv_speed.setText(String.valueOf(location.getSpeed()));
+            tv_speed.setText(valueOf(location.getSpeed()));
         }
         else {
             tv_speed.setText("Not Available");
+        }
+
+        Geocoder geocoder = new Geocoder(MainActivity.this);
+
+        try{
+            List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(),1);
+            tv_address.setText(addresses.get(0).getAddressLine(0));
+        }
+        catch (Exception e){
+            tv_address.setText("Unable to get street address");
         }
 
 
