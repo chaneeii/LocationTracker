@@ -139,10 +139,22 @@ public class MainActivity extends AppCompatActivity {
 
     private void startLocationUpdates() {
         tv_updates.setText("Location is being tracked");
+//        fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallBack, null);
+//        updateGPS();
 
-        //권한체크
-        fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallBack, null);
-        updateGPS();
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallBack, null);
+            updateGPS();
+        }
+        else {
+            // permissions not granted yet
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){ //최소 요구버전 M이상 이여야한다.
+                requestPermissions(new String [] {Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_FINE_LOCATION);
+            }
+        }
+
+
 
     }
 
